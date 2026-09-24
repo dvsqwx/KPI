@@ -12,7 +12,6 @@ erDiagram
     DOCTOR {
         uuid doctor_id PK
         string full_name
-        uuid specialty_id FK
         string phone
         string email
         date hire_date
@@ -61,7 +60,7 @@ erDiagram
         datetime paid_date
     }
 
-    SPECIALTY ||--o{ DOCTOR      : "об'єднує лікарів"
+    DOCTOR }|--|{ SPECIALTY      : "спеціалізація"
     PATIENT   ||--o{ APPOINTMENT : "записується на"
     DOCTOR    ||--o{ APPOINTMENT : "проводить"
     ROOM      ||--o{ APPOINTMENT : "приймає в"
