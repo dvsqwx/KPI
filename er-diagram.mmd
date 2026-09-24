@@ -1,0 +1,69 @@
+erDiagram
+    PATIENT {
+        int patient_id PK
+        string full_name
+        date birth_date
+        string phone
+        string email
+        string address
+        datetime registration_date
+    }
+
+    DOCTOR {
+        int doctor_id PK
+        string full_name
+        int specialty_id FK
+        string phone
+        string email
+        date hire_date
+        string license_number
+    }
+
+    SPECIALTY {
+        int specialty_id PK
+        string name
+        text description
+    }
+
+    ROOM {
+        int room_id PK
+        string number
+        int floor
+        text equipment_description
+    }
+
+    SERVICE {
+        int service_id PK
+        string name
+        text description
+        decimal price
+        int duration_minutes
+        string category
+    }
+
+    APPOINTMENT {
+        int appointment_id PK
+        int patient_id FK
+        int doctor_id FK
+        int room_id FK
+        datetime date_time
+        string status
+        text notes
+    }
+
+    INVOICE {
+        int invoice_id PK
+        int appointment_id FK
+        datetime issue_date
+        decimal total_amount
+        string payment_status
+        string payment_method
+        datetime paid_date
+    }
+
+    SPECIALTY ||--o{ DOCTOR      : "об'єднує лікарів"
+    PATIENT   ||--o{ APPOINTMENT : "записується на"
+    DOCTOR    ||--o{ APPOINTMENT : "проводить"
+    ROOM      ||--o{ APPOINTMENT : "приймає в"
+    APPOINTMENT }o--o{ SERVICE   : "включає"
+    APPOINTMENT ||--o| INVOICE   : "формує"
