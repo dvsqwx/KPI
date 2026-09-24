@@ -65,5 +65,5 @@ erDiagram
     PATIENT   ||--o{ APPOINTMENT : "записується на"
     DOCTOR    ||--o{ APPOINTMENT : "проводить"
     ROOM      ||--o{ APPOINTMENT : "приймає в"
-    APPOINTMENT }o--o{ SERVICE   : "включає"
+    APPOINTMENT }o--|{ SERVICE   : "включає"
     APPOINTMENT ||--o| INVOICE   : "формує"
