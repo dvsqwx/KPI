@@ -1,4 +1,4 @@
-# Специфікація концептуальної моделі — «Приватна стоматологічна клініка»
+# Специфікація концептуальної моделі — «Приватна стоматологічна клініка MED »
 
 ## 1. Сутності та їх бізнес-призначення
 
@@ -57,6 +57,7 @@
 - doctor_id — uuid, FK → Лікар, обов'язково
 - room_id — uuid, FK → Кабінет, обов'язково
 - date_time — datetime, обов'язково
+- duration_minutes — int, обов'язково
 - status — string (enum: заплановано / завершено / скасовано / пацієнт не з'явився)
 - notes — string
 
@@ -65,10 +66,10 @@
 - appointment_id — uuid, FK → Прийом, обов'язково, унікальне
 - issue_date — datetime, обов'язково
 - total_amount — decimal, обов'язково
-- paid_ammount - decimal, обов'язково
+- paid_amount — decimal, обов'язково
 - payment_status — string (enum: не оплачено / оплачено частково / оплачено повністю)
 - payment_method — string
-- paid_date — datetime
+- paid_date — datetime, опційно (null до моменту сплати)
 
 ## 3. Зв'язки
 
