@@ -51,7 +51,7 @@ erDiagram
         int duration_minutes
     }
 
-INVOICE {
+    INVOICE {
         uuid invoice_id PK
         uuid appointment_id FK
         datetime issue_date
@@ -60,9 +60,9 @@ INVOICE {
         string payment_status
         string payment_method
         datetime paid_date
-}
+    }
 
-    DOCTOR }|--|{ SPECIALTY      : "спеціалізація"
+    DOCTOR }o--|{ SPECIALTY      : "спеціалізація"
     PATIENT   ||--o{ APPOINTMENT : "записується на"
     DOCTOR    ||--o{ APPOINTMENT : "проводить"
     ROOM      ||--o{ APPOINTMENT : "приймає в"
