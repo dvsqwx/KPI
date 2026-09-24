@@ -1,6 +1,6 @@
 erDiagram
     PATIENT {
-        int patient_id PK
+        uuid patient_id PK
         string full_name
         date birth_date
         string phone
@@ -10,9 +10,9 @@ erDiagram
     }
 
     DOCTOR {
-        int doctor_id PK
+        uuid doctor_id PK
         string full_name
-        int specialty_id FK
+        uuid specialty_id FK
         string phone
         string email
         date hire_date
@@ -20,40 +20,40 @@ erDiagram
     }
 
     SPECIALTY {
-        int specialty_id PK
+        uuid specialty_id PK
         string name
-        text description
+        string description
     }
 
     ROOM {
-        int room_id PK
+        uuid room_id PK
         string number
         int floor
-        text equipment_description
+        string equipment_description
     }
 
     SERVICE {
-        int service_id PK
+        uuid service_id PK
         string name
-        text description
+        string description
         decimal price
         int duration_minutes
         string category
     }
 
     APPOINTMENT {
-        int appointment_id PK
-        int patient_id FK
-        int doctor_id FK
-        int room_id FK
+        uuid appointment_id PK
+        uuid patient_id FK
+        uuid doctor_id FK
+        uuid room_id FK
         datetime date_time
         string status
-        text notes
+        string notes
     }
 
     INVOICE {
-        int invoice_id PK
-        int appointment_id FK
+        uuid invoice_id PK
+        uuid appointment_id FK
         datetime issue_date
         decimal total_amount
         string payment_status
