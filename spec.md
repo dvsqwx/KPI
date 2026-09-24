@@ -65,6 +65,7 @@
 - appointment_id — uuid, FK → Прийом, обов'язково, унікальне
 - issue_date — datetime, обов'язково
 - total_amount — decimal, обов'язково
+- paid_ammount - decimal, обов'язково
 - payment_status — string (enum: не оплачено / оплачено частково / оплачено повністю)
 - payment_method — string
 - paid_date — datetime
