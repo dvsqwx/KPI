@@ -50,15 +50,16 @@ erDiagram
         string notes
     }
 
-    INVOICE {
+INVOICE {
         uuid invoice_id PK
         uuid appointment_id FK
         datetime issue_date
         decimal total_amount
+        decimal paid_amount
         string payment_status
         string payment_method
         datetime paid_date
-    }
+}
 
     DOCTOR }|--|{ SPECIALTY      : "спеціалізація"
     PATIENT   ||--o{ APPOINTMENT : "записується на"
