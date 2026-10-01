@@ -13,11 +13,11 @@
 flowchart LR
 
     %% ===== Актори =====
-    Patient(["🧍 Пацієнт"]):::actorHuman
-    Doctor(["🧍 Лікар"]):::actorHuman
-    Admin(["🧍 Адміністратор"]):::actorHuman
-    Staff(["🧍 Персонал клініки"]):::actorHuman
-    PaymentSys[["💳 Платіжна система"]]:::actorSystem
+    Patient([" Пацієнт"]):::actorHuman
+    Doctor([" Лікар"]):::actorHuman
+    Admin([" Адміністратор"]):::actorHuman
+    Staff([" Персонал клініки"]):::actorHuman
+    PaymentSys[[" Платіжна система"]]:::actorSystem
 
     %% Генералізація акторів: Лікар і Адміністратор — спеціалізації Персоналу клініки
     Doctor -->|"generalization"| Staff
