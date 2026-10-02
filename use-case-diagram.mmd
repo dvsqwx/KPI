@@ -13,11 +13,11 @@
 flowchart LR
 
     %% ===== Актори =====
-    Patient([" Пацієнт"]):::actorHuman
-    Doctor([" Лікар"]):::actorHuman
-    Admin([" Адміністратор"]):::actorHuman
-    Staff([" Персонал клініки"]):::actorHuman
-    PaymentSys[[" Платіжна система"]]:::actorSystem
+    Patient(["Пацієнт"]):::actorHuman
+    Doctor(["Лікар"]):::actorHuman
+    Admin(["Адміністратор"]):::actorHuman
+    Staff(["Персонал клініки"]):::actorHuman
+    PaymentSys[["Платіжна система"]]:::actorSystem
 
     %% Генералізація акторів: Лікар і Адміністратор — спеціалізації Персоналу клініки
     Doctor -->|"generalization"| Staff
@@ -38,7 +38,6 @@ flowchart LR
         UC7(["Оплатити рахунок"])
         UC8(["Обробити платіж"])
         UC9(["Повернути кошти"])
-        UC10(["Надіслати нагадування про прийом"])
         UC11(["Переглянути історію лікування"])
 
         UC12(["Керувати довідниками"])
@@ -72,7 +71,6 @@ flowchart LR
     UC7 -.->|"«include»"| UC8
 
     %% ===== Extend (опційне розширення за умови) =====
-    UC10 -.->|"«extend» [за 24 год до прийому]"| UC1
     UC9 -.->|"«extend» [якщо прийом було оплачено]"| UC3
 
     %% ===== Генералізація use cases =====
