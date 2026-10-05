@@ -12,7 +12,7 @@ sequenceDiagram
     participant DB as Database
     participant SMSGateway as SMS Gateway
 
-    Patient->>WebApp: Select doctor, date and time slot (doctor_id, room_id, date_time)
+    Patient->>WebApp: Select doctor, date and time slot (doctor_id, date_time)
 
     loop For each service selected by the patient
         Patient->>WebApp: Add service to booking
@@ -24,13 +24,18 @@ sequenceDiagram
     end
 
     Patient->>WebApp: Submit booking form (optionally with phone number or SMS confirmation)
-    WebApp->>Booking: createAppointment(patient_id, doctor_id, room_id, date_time, service_ids[], sms_confirmation, phone)
+    WebApp->>Booking: createAppointment(patient_id, doctor_id, date_time, service_ids[], sms_confirmation, phone)
 
     Booking->>+DB: findPatientById(patient_id)
     DB-->>-Booking: PATIENT
     Booking->>+DB: findServicesByIds(service_ids[])
     DB-->>-Booking: SERVICE[] (price, duration_minutes)
     Booking->>Booking: calculateTotalDuration(services)
+
+    %% Автоматичне визначення кабінету лікаря на бекенді
+    Booking->>+DB: findAssignedRoom(doctor_id, date_time)
+    DB-->>-Booking: ROOM (room_id)
+
     Booking->>+DB: findConflictingAppointments(doctor_id, room_id, date_time, duration_minutes)
     DB-->>-Booking: Conflicting APPOINTMENT list
 
