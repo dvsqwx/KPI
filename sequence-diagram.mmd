@@ -1,5 +1,6 @@
 %% Sequence diagram — запис пацієнта на прийом через онлайн-форму (UC1, REQ-01, REQ-02)
 %% Ланцюг: Patient -> Web App -> Booking Service -> Database
+%% Додатково: Booking Service -> SMS Gateway (опційне SMS-підтвердження, блок opt)
 %% Назви сутностей і атрибутів (PATIENT, DOCTOR, ROOM, SERVICE, APPOINTMENT, actual_price)
 %% збігаються з концептуальною моделлю з er-diagram.mmd.
 %% Return-повідомлення показані пунктирними стрілками (-->>).
@@ -9,6 +10,7 @@ sequenceDiagram
     participant WebApp as Web App
     participant Booking as Booking Service
     participant DB as Database
+    participant SMSGateway as SMS Gateway
 
     Patient->>WebApp: Select doctor, date and time slot (doctor_id, room_id, date_time)
 
@@ -21,8 +23,8 @@ sequenceDiagram
         WebApp-->>Patient: Update selected services, total price and duration
     end
 
-    Patient->>WebApp: Submit booking form
-    WebApp->>Booking: createAppointment(patient_id, doctor_id, room_id, date_time, service_ids[])
+    Patient->>WebApp: Submit booking form (optionally with phone number or SMS confirmation)
+    WebApp->>Booking: createAppointment(patient_id, doctor_id, room_id, date_time, service_ids[], sms_confirmation, phone)
 
     Booking->>+DB: findPatientById(patient_id)
     DB-->>-Booking: PATIENT
@@ -38,8 +40,18 @@ sequenceDiagram
         DB-->>-Booking: appointment_id
         Booking->>+DB: saveAppointmentServices(appointment_id, service_ids[], actual_price)
         DB-->>-Booking: Services linked
-        Booking-->>WebApp: 201 Created (appointment_id, status = scheduled)
+
+        opt Patient entered a phone number or chose SMS confirmation
+            Booking->>+SMSGateway: sendSms(phone, message_text)
+            SMSGateway-->>-Booking: Delivery status (SENT)
+        end
+
+        Booking-->>WebApp: 201 Created (appointment_id, status = scheduled, sms_status)
         WebApp-->>Patient: Show booking confirmation
+
+        opt SMS delivery status is SENT
+            WebApp-->>Patient: Show message "SMS confirmation sent"
+        end
     else Time slot is already taken
         Booking-->>WebApp: 409 Conflict (SLOT_UNAVAILABLE)
         WebApp-->>Patient: Show error and ask to choose another time
