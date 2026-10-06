@@ -51,7 +51,7 @@ sequenceDiagram
         Note over Booking,DB: Saved in one transaction
         Booking->>+DB: saveAppointment(patient_id, doctor_id, room_id, date_time, duration_minutes, status = scheduled)
         DB-->>-Booking: appointment_id
-        Booking->>+DB: saveAppointmentServices(appointment_id, service_ids[], actual_price)
+        Booking->>+DB: saveAppointmentServices(appointment_id, items: [{service_id, actual_price}])
         DB-->>-Booking: Services linked
 
         opt Patient entered a phone number or chose SMS confirmation
