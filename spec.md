@@ -247,7 +247,7 @@
 7. Booking Service повторно вичитує послуги з БД (`findServicesByIds`) для гарантії достовірності цін і повторно розраховує `duration_minutes`.
 8. Booking Service автоматично визначає закріплений кабінет лікаря на вказаний час через `findAssignedRoom(doctor_id, date_time)` і отримує `room_id`.
 9. Booking Service перевіряє відсутність конфліктів (`findConflictingAppointments` за лікарем, отриманим кабінетом і інтервалом) — список конфліктів порожній.
-10. В одній транзакції Booking Service зберігає прийом зі статусом `scheduled` (`saveAppointment`) та зв'язки Прийом–Послуга з ціною `actual_price` (`saveAppointmentServices`).
+10. В одній транзакції Booking Service зберігає прийом зі статусом `scheduled` (`saveAppointment`) та фіксує зв'язки Прийом–Послуга у проміжній таблиці, передаючи колекцію послуг з індивідуальною фіксованою ціною для кожної позиції (`saveAppointmentServices(appointment_id, items: [{service_id, actual_price}])`).
 11. Опційно (блок `opt`), якщо вказано номер або обрано SMS: Booking Service викликає `sendSms(phone, message_text)` у SMS Gateway, який повертає статус доставки (`SENT`).
 12. Booking Service повертає `201 Created` з `appointment_id` і `sms_status`, Web App показує підтвердження.
 13. Якщо статус SMS — `SENT` (другий блок `opt`), Web App додатково показує повідомлення «SMS confirmation sent».
