@@ -12,7 +12,7 @@ sequenceDiagram
     participant DB as Database
     participant SMSGateway as SMS Gateway
 
-    Patient->>WebApp: Select doctor, date and time slot (doctor_id, date_time)
+    Patient->>WebApp: Select doctor (doctor_id)
 
     loop For each service selected by the patient
         Patient->>WebApp: Add service to booking
@@ -22,6 +22,14 @@ sequenceDiagram
         Booking-->>-WebApp: Service details
         WebApp-->>Patient: Update selected services, total price and duration
     end
+
+    Patient->>WebApp: Select date
+    WebApp->>+Booking: getAvailableSlots(doctor_id, date, total_duration)
+    Booking->>+DB: findAvailableSlots(doctor_id, date, total_duration)
+    DB-->>-Booking: Free time slots
+    Booking-->>-WebApp: Available time slots
+    WebApp-->>Patient: Display available time slots
+    Patient->>WebApp: Pick time slot (date_time)
 
     Patient->>WebApp: Submit booking form (optionally with phone number or SMS confirmation)
     WebApp->>Booking: createAppointment(patient_id, doctor_id, date_time, service_ids[], sms_confirmation, phone)
