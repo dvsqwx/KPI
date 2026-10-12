@@ -51,6 +51,12 @@ erDiagram
         int duration_minutes
     }
 
+    APPOINTMENT_SERVICE {
+        uuid appointment_id PK, FK
+        uuid service_id PK, FK
+        decimal actual_price
+    }
+
     INVOICE {
         uuid invoice_id PK
         uuid appointment_id FK
@@ -66,5 +72,6 @@ erDiagram
     PATIENT   ||--o{ APPOINTMENT : "записується на"
     DOCTOR    ||--o{ APPOINTMENT : "проводить"
     ROOM      ||--o{ APPOINTMENT : "приймає в"
-    APPOINTMENT }o--|{ SERVICE   : "включає"
+    APPOINTMENT ||--|{ APPOINTMENT_SERVICE : "включає"
+    SERVICE   ||--o{ APPOINTMENT_SERVICE : "входить до"
     APPOINTMENT ||--o| INVOICE   : "формує"
