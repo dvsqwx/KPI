@@ -33,7 +33,7 @@
 
 Розділ 9 `spec.md` і `sequence-diagram.mmd` описують запис на прийом через онлайн-форму. Учасники: Patient → Web App → Booking Service → Database, а також SMS Gateway.
 - **Порядок вибору:** лікар → послуги (блок `loop`) → дата → вільний слот під `total_duration`.
-- **Кабінет:** `room_id` визначає Booking Service (`findAssignedRoom`), клієнт його не вибирає вручну.
+- **Кабінет:** `room_id` автоматично підбирає Booking Service (`findAvailableRoom` — пошук вільного кабінету з довідника `Room` без перетинів у `Appointment` на обраний інтервал), клієнт його не вибирає вручну.
 - **Гілки:** `alt / else` — успішний запис (`201 Created`) або зайнятий слот (`409 Conflict`); `opt` — SMS-підтвердження, якщо вказано номер або обрано SMS.
 - **Збереження послуг:** збереження запису в сутність «Послуга прийому» (`saveAppointmentServices`) із фіксацією ціни `actual_price` для кожної позиції.
 

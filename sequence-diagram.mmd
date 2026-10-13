@@ -1,7 +1,7 @@
 %% Sequence diagram — запис пацієнта на прийом через онлайн-форму (UC1, UC10, REQ-01, REQ-02, REQ-09)
 %% Ланцюг: Patient -> Web App -> Booking Service -> Database
 %% Додатково: Booking Service -> SMS Gateway (опційне SMS-підтвердження, блок opt)
-%% Назви сутностей і атрибутів (PATIENT, DOCTOR, ROOM, SERVICE, APPOINTMENT, actual_price)
+%% Назви сутностей і атрибутів (PATIENT, DOCTOR, ROOM, SERVICE, APPOINTMENT, actual_price, APPOINTMENT_SERVICE)
 %% збігаються з концептуальною моделлю з er-diagram.mmd.
 %% Return-повідомлення показані пунктирними стрілками (-->>).
 sequenceDiagram
@@ -26,7 +26,7 @@ sequenceDiagram
     Patient->>WebApp: Select date
     WebApp->>+Booking: getAvailableSlots(doctor_id, date, total_duration)
     Booking->>+DB: findAvailableSlots(doctor_id, date, total_duration)
-    DB-->>-Booking: Free time slots
+    DB-->>-Booking: Free time slots (based on APPOINTMENT)
     Booking-->>-WebApp: Available time slots
     WebApp-->>Patient: Display available time slots
     Patient->>WebApp: Pick time slot (date_time)
@@ -40,8 +40,8 @@ sequenceDiagram
     DB-->>-Booking: SERVICE[] (price, duration_minutes)
     Booking->>Booking: calculateTotalDuration(services)
 
-    %% Автоматичне визначення кабінету лікаря на бекенді
-    Booking->>+DB: findAssignedRoom(doctor_id, date_time)
+    %% Автоматичний підбір вільного кабінету на бекенді
+    Booking->>+DB: findAvailableRoom(date_time, duration_minutes)
     DB-->>-Booking: ROOM (room_id)
 
     Booking->>+DB: findConflictingAppointments(doctor_id, room_id, date_time, duration_minutes)
@@ -52,7 +52,7 @@ sequenceDiagram
         Booking->>+DB: saveAppointment(patient_id, doctor_id, room_id, date_time, duration_minutes, status = scheduled)
         DB-->>-Booking: appointment_id
         Booking->>+DB: saveAppointmentServices(appointment_id, items: [{service_id, actual_price}])
-        DB-->>-Booking: Services linked
+        DB-->>-Booking: APPOINTMENT_SERVICE records saved
 
         opt Patient entered a phone number or chose SMS confirmation
             Booking->>+SMSGateway: sendSms(phone, message_text)
