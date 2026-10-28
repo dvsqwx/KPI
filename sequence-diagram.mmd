@@ -1,11 +1,8 @@
-%% Sequence diagrams для UC1 «Записатися на прийом» — по одній діаграмі на кожен Gherkin-сценарій із spec.md (розділ 7).
-%% Файл містить 4 окремі діаграми; кожна починається з рядка sequenceDiagram і рендериться окремо.
+%% Sequence diagrams для UC1 «Записатися на прийом» — 4 сценарії Gherkin із spec.md (розділ 7 та 9).
 %% Назви сутностей і полів (PATIENT, DOCTOR, ROOM, SERVICE, APPOINTMENT, APPOINTMENT_SERVICE, actual_price,
 %% duration_minutes) збігаються з er-diagram.mmd. Return-повідомлення — пунктирні стрілки (-->>).
 
-%% ===== Scenario 1. Успішний запис із кількома послугами та SMS (UC1, UC10) =====
 sequenceDiagram
-    title Scenario 1. Successful booking with several services and SMS confirmation
     autonumber
     actor Patient
     participant WebApp as Web App
@@ -13,29 +10,30 @@ sequenceDiagram
     participant DB as Database
     participant SMSGateway as SMS Gateway
 
+    %% ===== Scenario 1. Успішний запис із кількома послугами та SMS (UC1, UC10) =====
+    Note over Patient,SMSGateway: Scenario 1. Successful booking with several services and SMS confirmation
     Note over Patient,WebApp: Patient is signed in (valid JWT)
-    Patient->>WebApp: Select doctor (doctor_id)
+    Patient->>+WebApp: Select doctor (doctor_id)
+    WebApp-->>-Patient: Doctor selected
 
     loop For each service added by the patient
-        Patient->>WebApp: Add service to booking
+        Patient->>+WebApp: Add service to booking
         WebApp->>+Booking: getService(service_id)
         Booking->>+DB: findServiceById(service_id)
         DB-->>-Booking: SERVICE (name, price, duration_minutes)
         Booking-->>-WebApp: Service details
-        WebApp-->>Patient: Update service list, total price and total_duration
+        WebApp-->>-Patient: Update service list, total price and total_duration
     end
 
-    Patient->>WebApp: Select date
+    Patient->>+WebApp: Select date
     WebApp->>+Booking: getAvailableSlots(doctor_id, date, total_duration)
     Booking->>+DB: findAvailableSlots(doctor_id, date, total_duration)
     DB-->>-Booking: Free time slots (APPOINTMENT of the doctor, working hours 09:00-18:00)
     Booking-->>-WebApp: Available time slots
-    WebApp-->>Patient: Display available time slots
+    WebApp-->>-Patient: Display available time slots
 
-    Patient->>WebApp: Pick time slot (date_time) and submit booking form
-    activate WebApp
-    WebApp->>Booking: createAppointment(patient_id, doctor_id, date_time, service_ids[], sms_confirmation, phone)
-    activate Booking
+    Patient->>+WebApp: Pick time slot (date_time) and submit booking form
+    WebApp->>+Booking: createAppointment(patient_id, doctor_id, date_time, service_ids[], sms_confirmation, phone)
     Booking->>Booking: validateJwt(access_token)
     Booking->>+DB: findPatientById(patient_id)
     DB-->>-Booking: PATIENT
@@ -66,47 +64,38 @@ sequenceDiagram
         end
     end
 
-    Booking-->>WebApp: 201 Created (appointment_id, status = scheduled, sms_status)
-    deactivate Booking
+    Booking-->>-WebApp: 201 Created (appointment_id, status = scheduled, sms_status)
     WebApp-->>Patient: Show booking confirmation
     opt sms_status is SENT
         WebApp-->>Patient: Show message "SMS confirmation sent"
     end
     deactivate WebApp
 
-%% ===== Scenario 2. Слот або кабінет уже зайнятий (409 Conflict) =====
-sequenceDiagram
-    title Scenario 2. Time slot or room is already taken (409 Conflict)
-    autonumber
-    actor Patient
-    participant WebApp as Web App
-    participant Booking as Booking Service
-    participant DB as Database
-
+    %% ===== Scenario 2. Слот або кабінет уже зайнятий (409 Conflict) =====
+    Note over Patient,DB: Scenario 2. Time slot or room is already taken (409 Conflict)
     Note over Patient,WebApp: Patient is signed in (valid JWT)
-    Patient->>WebApp: Select doctor (doctor_id)
+    Patient->>+WebApp: Select doctor (doctor_id)
+    WebApp-->>-Patient: Doctor selected
 
     loop For each service added by the patient
-        Patient->>WebApp: Add service to booking
+        Patient->>+WebApp: Add service to booking
         WebApp->>+Booking: getService(service_id)
         Booking->>+DB: findServiceById(service_id)
         DB-->>-Booking: SERVICE (name, price, duration_minutes)
         Booking-->>-WebApp: Service details
-        WebApp-->>Patient: Update service list, total price and total_duration
+        WebApp-->>-Patient: Update service list, total price and total_duration
     end
 
-    Patient->>WebApp: Select date
+    Patient->>+WebApp: Select date
     WebApp->>+Booking: getAvailableSlots(doctor_id, date, total_duration)
     Booking->>+DB: findAvailableSlots(doctor_id, date, total_duration)
     DB-->>-Booking: Free time slots (APPOINTMENT of the doctor, working hours 09:00-18:00)
     Booking-->>-WebApp: Available time slots
-    WebApp-->>Patient: Display available time slots
+    WebApp-->>-Patient: Display available time slots
 
     Note over DB: Meanwhile another patient books the same doctor time or the last free ROOM
-    Patient->>WebApp: Pick time slot (date_time) and submit booking form
-    activate WebApp
-    WebApp->>Booking: createAppointment(patient_id, doctor_id, date_time, service_ids[], sms_confirmation, phone)
-    activate Booking
+    Patient->>+WebApp: Pick time slot (date_time) and submit booking form
+    WebApp->>+Booking: createAppointment(patient_id, doctor_id, date_time, service_ids[], sms_confirmation, phone)
     Booking->>Booking: validateJwt(access_token)
     Booking->>+DB: findPatientById(patient_id)
     DB-->>-Booking: PATIENT
@@ -135,40 +124,32 @@ sequenceDiagram
     deactivate WebApp
 
     opt Patient chooses another time (selected services are kept)
-        Patient->>WebApp: Select another date or time slot
+        Patient->>+WebApp: Select another date or time slot
         WebApp->>+Booking: getAvailableSlots(doctor_id, date, total_duration)
         Booking->>+DB: findAvailableSlots(doctor_id, date, total_duration)
         DB-->>-Booking: Free time slots
         Booking-->>-WebApp: Available time slots
-        WebApp-->>Patient: Display available time slots
+        WebApp-->>-Patient: Display available time slots
     end
 
-%% ===== Scenario 3. У лікаря немає вільних вікон на обрану дату (порожній список слотів на 90 хв) =====
-sequenceDiagram
-    title Scenario 3. No free time slots for the selected date (90 min)
-    autonumber
-    actor Patient
-    participant WebApp as Web App
-    participant Booking as Booking Service
-    participant DB as Database
-
+    %% ===== Scenario 3. У лікаря немає вільних вікон на обрану дату (порожній список слотів на 90 хв) =====
+    Note over Patient,DB: Scenario 3. No free time slots for the selected date (90 min)
     Note over Patient,WebApp: Patient is signed in (valid JWT)
-    Patient->>WebApp: Select doctor (doctor_id)
+    Patient->>+WebApp: Select doctor (doctor_id)
+    WebApp-->>-Patient: Doctor selected
 
     loop For each service added by the patient
-        Patient->>WebApp: Add service to booking
+        Patient->>+WebApp: Add service to booking
         WebApp->>+Booking: getService(service_id)
         Booking->>+DB: findServiceById(service_id)
         DB-->>-Booking: SERVICE (name, price, duration_minutes)
         Booking-->>-WebApp: Service details
-        WebApp-->>Patient: Update service list, total price and total_duration
+        WebApp-->>-Patient: Update service list, total price and total_duration
     end
     Note over WebApp: Examination 30 min + Professional cleaning 60 min, total_duration = 90
 
-    Patient->>WebApp: Select date
-    activate WebApp
-    WebApp->>Booking: getAvailableSlots(doctor_id, date, total_duration = 90)
-    activate Booking
+    Patient->>+WebApp: Select date
+    WebApp->>+Booking: getAvailableSlots(doctor_id, date, total_duration = 90)
     Booking->>+DB: findAvailableSlots(doctor_id, date, total_duration = 90)
     DB-->>-Booking: Free time slots: [] (no 90 min gap between 09:00 and 18:00)
 
@@ -184,47 +165,39 @@ sequenceDiagram
     deactivate WebApp
 
     opt Patient chooses another date
-        Patient->>WebApp: Select another date
+        Patient->>+WebApp: Select another date
         WebApp->>+Booking: getAvailableSlots(doctor_id, date, total_duration = 90)
         Booking->>+DB: findAvailableSlots(doctor_id, date, total_duration = 90)
         DB-->>-Booking: Free time slots
         Booking-->>-WebApp: Available time slots
-        WebApp-->>Patient: Display available time slots
+        WebApp-->>-Patient: Display available time slots
     end
 
-%% ===== Scenario 4. Пацієнт не авторизований (401 Unauthorized на перевірці JWT) =====
-sequenceDiagram
-    title Scenario 4. Patient is not signed in (401 Unauthorized)
-    autonumber
-    actor Patient
-    participant WebApp as Web App
-    participant Booking as Booking Service
-    participant DB as Database
-
+    %% ===== Scenario 4. Пацієнт не авторизований (401 Unauthorized на перевірці JWT) =====
+    Note over Patient,DB: Scenario 4. Patient is not signed in (401 Unauthorized)
     Note over Patient,WebApp: Patient is NOT signed in (JWT is missing or expired)
-    Patient->>WebApp: Select doctor (doctor_id)
+    Patient->>+WebApp: Select doctor (doctor_id)
+    WebApp-->>-Patient: Doctor selected
 
     loop For each service added by the patient
-        Patient->>WebApp: Add service to booking
+        Patient->>+WebApp: Add service to booking
         WebApp->>+Booking: getService(service_id)
         Booking->>+DB: findServiceById(service_id)
         DB-->>-Booking: SERVICE (name, price, duration_minutes)
         Booking-->>-WebApp: Service details
-        WebApp-->>Patient: Update service list, total price and total_duration
+        WebApp-->>-Patient: Update service list, total price and total_duration
     end
 
-    Patient->>WebApp: Select date
+    Patient->>+WebApp: Select date
     WebApp->>+Booking: getAvailableSlots(doctor_id, date, total_duration)
     Booking->>+DB: findAvailableSlots(doctor_id, date, total_duration)
     DB-->>-Booking: Free time slots (APPOINTMENT of the doctor, working hours 09:00-18:00)
     Booking-->>-WebApp: Available time slots
-    WebApp-->>Patient: Display available time slots
+    WebApp-->>-Patient: Display available time slots
 
-    Patient->>WebApp: Pick time slot (date_time) and submit booking form
-    activate WebApp
-    WebApp->>Booking: createAppointment(patient_id, doctor_id, date_time, service_ids[], sms_confirmation, phone)
+    Patient->>+WebApp: Pick time slot (date_time) and submit booking form
+    WebApp->>+Booking: createAppointment(patient_id, doctor_id, date_time, service_ids[], sms_confirmation, phone)
     Note right of WebApp: Header Authorization Bearer is missing or expired
-    activate Booking
     Booking->>Booking: validateJwt(access_token)
 
     alt JWT is missing or expired
@@ -235,11 +208,13 @@ sequenceDiagram
         Booking->>+DB: findPatientById(patient_id)
         DB-->>-Booking: PATIENT
         Note over Booking,DB: Booking continues as in Scenario 1
+        Booking-->>WebApp: 201 Created (appointment_id, status = scheduled)
+        WebApp-->>Patient: Show booking confirmation
     end
     deactivate Booking
     deactivate WebApp
 
     opt Patient signs in on the sign-in page (UC0)
-        Patient->>WebApp: Enter credentials and sign in
-        WebApp-->>Patient: Signed in, show booking page
+        Patient->>+WebApp: Enter credentials and sign in
+        WebApp-->>-Patient: Signed in, show booking page
     end
