@@ -16,9 +16,9 @@ flowchart TB
         D1["findServiceById(service_id)"]
         D2["findAvailableSlots(doctor_id, date, total_duration), working hours 09:00-18:00"]
         D3["BEGIN transaction"]
+        D3a["findPatientById(patient_id), findServicesByIds(service_ids[])"]
         D4["findAvailableRoom(date_time, duration_minutes)"]
         D5["findConflictingAppointments(doctor_id, room_id, date_time, duration_minutes)"]
-        D6{"Doctor or room conflict?"}
         D7["ROLLBACK"]
         D8["saveAppointment, saveAppointmentServices (status = scheduled, actual_price)"]
         D9["COMMIT"]
@@ -31,7 +31,8 @@ flowchart TB
         B3["validateJwt(access_token)"]
         B4{"JWT valid?"}
         B5["401 Unauthorized (database is not queried)"]
-        B6["findPatientById, findServicesByIds, calculateTotalDuration"]
+        B6["calculateTotalDuration(services)"]
+        B6a{"Doctor or room conflict?"}
         B7["409 Conflict (SLOT_UNAVAILABLE)"]
         Fork@{ shape: fork, label: "Fork" }
         B8["201 Created (appointment_id, status = scheduled)"]
@@ -79,14 +80,14 @@ flowchart TB
     W5 --> P4
     W4 -->|"yes"| W6 --> P5 --> W7 --> B3 --> B4
 
-    %% Перевірка JWT
+    %% Перевірка JWT і початок транзакції
     B4 -->|"no"| B5 --> W8 --> P6 --> W9 --> P4
-    B4 -->|"yes"| B6 --> D3 --> D4 --> D5 --> D6
+    B4 -->|"yes"| D3 --> D3a --> B6 --> D4 --> D5 --> B6a
 
-    %% Транзакція: конфлікт або збереження
-    D6 -->|"conflict"| D7 --> B7 --> W10
+    %% Транзакція: перевірка конфлікту в Booking Service або збереження
+    B6a -->|"conflict"| D7 --> B7 --> W10
     W10 -->|"choose another time"| P4
-    D6 -->|"no conflict"| D8 --> D9 --> Fork
+    B6a -->|"no conflict"| D8 --> D9 --> Fork
 
     %% Fork: відповідь клієнту і SMS паралельно
     Fork --> B8 --> W11 --> Join
