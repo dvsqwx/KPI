@@ -53,7 +53,7 @@ flowchart TB
         W6["Display available time slots"]
         W7["Send createAppointment request"]
         W8["Redirect to sign-in page"]
-        W9["Show booking page"]
+        W9["Restore booking form with selected services"]
         W10["Show error: time or room is taken, selected services are kept"]
         W11["Show booking confirmation"]
     end
@@ -66,7 +66,7 @@ flowchart TB
         P3{"Add another service?"}
         P4["Select date"]
         P5["Pick time slot and submit booking form"]
-        P6["Sign in (UC0)"]
+        P6{"Sign in (UC0)?"}
     end
 
     %% Вибір послуг (цикл) і підрахунок total_duration
@@ -81,12 +81,15 @@ flowchart TB
     W4 -->|"yes"| W6 --> P5 --> W7 --> B3 --> B4
 
     %% Перевірка JWT і початок транзакції
-    B4 -->|"no"| B5 --> W8 --> P6 --> W9 --> P4
+    B4 -->|"no"| B5 --> W8 --> P6
+    P6 -->|"signed in"| W9 --> P5
+    P6 -->|"cancel"| End
     B4 -->|"yes"| D3 --> D3a --> B6 --> D4 --> D5 --> B6a
 
     %% Транзакція: перевірка конфлікту в Booking Service або збереження
     B6a -->|"conflict"| D7 --> B7 --> W10
-    W10 -->|"choose another time"| P4
+    W10 -->|"pick another slot"| P5
+    W10 -->|"choose another date"| P4
     B6a -->|"no conflict"| D8 --> D9 --> Fork
 
     %% Fork: відповідь клієнту і SMS паралельно
