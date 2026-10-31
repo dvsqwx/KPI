@@ -15,8 +15,8 @@ flowchart TB
         direction TB
         D1["findServiceById(service_id)"]
         D2["findAvailableSlots(doctor_id, date, total_duration), working hours 09:00-18:00"]
-        D3["BEGIN transaction"]
         D3a["findPatientById(patient_id), findServicesByIds(service_ids[])"]
+        D3["BEGIN transaction"]
         D4["findAvailableRoom(date_time, duration_minutes)"]
         D5["findConflictingAppointments(doctor_id, room_id, date_time, duration_minutes)"]
         D7["ROLLBACK"]
@@ -40,7 +40,6 @@ flowchart TB
         B10["sms_status = SENT"]
         B11["sms_status = FAILED (APPOINTMENT stays scheduled)"]
         Join@{ shape: fork, label: "Join" }
-        End(((" "))):::endNode
     end
 
     subgraph WebAppLane["Web App"]
@@ -56,6 +55,7 @@ flowchart TB
         W9["Restore booking form with selected services"]
         W10["Show error: time or room is taken, selected services are kept"]
         W11["Show booking confirmation"]
+        W12["Show message: SMS confirmation sent"]
     end
 
     subgraph PatientLane["Patient"]
@@ -67,6 +67,7 @@ flowchart TB
         P4["Select date"]
         P5["Pick time slot and submit booking form"]
         P6{"Sign in (UC0)?"}
+        End(((" "))):::endNode
     end
 
     %% Вибір послуг (цикл) і підрахунок total_duration
@@ -84,7 +85,7 @@ flowchart TB
     B4 -->|"no"| B5 --> W8 --> P6
     P6 -->|"signed in"| W9 --> P5
     P6 -->|"cancel"| End
-    B4 -->|"yes"| D3 --> D3a --> B6 --> D4 --> D5 --> B6a
+    B4 -->|"yes"| D3a --> B6 --> D3 --> D4 --> D5 --> B6a
 
     %% Транзакція: перевірка конфлікту в Booking Service або збереження
     B6a -->|"conflict"| D7 --> B7 --> W10
@@ -96,7 +97,7 @@ flowchart TB
     Fork --> B8 --> W11 --> Join
     Fork --> B9
     B9 -->|"yes"| S1 --> S2
-    S2 -->|"SENT"| B10 --> Join
+    S2 -->|"SENT"| B10 --> W12 --> Join
     S2 -->|"error or timeout"| B11 --> Join
     B9 -->|"no"| Join
     Join --> End
@@ -108,4 +109,4 @@ flowchart TB
     classDef bar fill:#000,stroke:#000;
     class Fork,Join bar;
     class W5,W10,B5,B7,D7,B11 errorNode;
-    class W11,B8,D9,B10 okNode;
+    class W11,W12,B8,D9,B10 okNode;
