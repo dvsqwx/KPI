@@ -19,7 +19,7 @@ flowchart TB
         end
 
         subgraph SVC["Рівень сервісів"]
-            Booking["«component»<br/><b>Booking Service</b><br/>UC0, UC1, UC2, UC3, UC4, UC11<br/>internal: validateJwt (401, REQ-20, NFR-05..07),<br/>calculateTotalDuration<br/>provided: IBookingApi<br/>required: IPatientRepository, IServiceRepository,<br/>IAppointmentRepository, IRoomRepository,<br/>ITransaction, ISmsGateway"]:::comp
+            Booking["«component»<br/><b>Booking Service</b><br/>UC0, UC1, UC2, UC3, UC4, UC11<br/>internal: validateJwt (401, REQ-20, NFR-05..07),<br/>calculateTotalDuration<br/>provided: IBookingApi<br/>required: IPatientRepository, IServiceRepository,<br/>IAppointmentRepository, IRoomRepository, ISmsGateway"]:::comp
             Catalog["«component»<br/><b>Catalog Service</b><br/>UC12 (specialties, rooms, services, doctors)<br/>provided: ICatalogApi<br/>required: IServiceRepository, IRoomRepository,<br/>ISpecialtyRepository, IDoctorRepository"]:::comp
             Billing["«component»<br/><b>Billing Service</b><br/>UC5, UC7, UC9<br/>provided: IBillingApi<br/>required: IInvoiceRepository, IAppointmentRepository"]:::comp
         end
@@ -27,9 +27,8 @@ flowchart TB
         subgraph DA["Рівень Data Access (репозиторії)"]
             PatientRepo["«component»<br/><b>PatientRepository</b><br/>PATIENT<br/>provided: IPatientRepository<br/>required: SQL"]:::repo
             ServiceRepo["«component»<br/><b>ServiceRepository</b><br/>SERVICE<br/>provided: IServiceRepository<br/>required: SQL"]:::repo
-            AppRepo["«component»<br/><b>AppointmentRepository</b><br/>APPOINTMENT, APPOINTMENT_SERVICE<br/>provided: IAppointmentRepository<br/>required: SQL"]:::repo
+            AppRepo["«component»<br/><b>AppointmentRepository</b><br/>APPOINTMENT, APPOINTMENT_SERVICE<br/>provided: IAppointmentRepository<br/>required: SQL (BEGIN, COMMIT, ROLLBACK)"]:::repo
             RoomRepo["«component»<br/><b>RoomRepository</b><br/>ROOM<br/>provided: IRoomRepository<br/>required: SQL"]:::repo
-            TxManager["«component»<br/><b>TransactionManager</b><br/>provided: ITransaction<br/>required: SQL"]:::repo
             InvoiceRepo["«component»<br/><b>InvoiceRepository</b><br/>INVOICE<br/>provided: IInvoiceRepository<br/>required: SQL"]:::repo
             SpecialtyRepo["«component»<br/><b>SpecialtyRepository</b><br/>SPECIALTY<br/>provided: ISpecialtyRepository<br/>required: SQL"]:::repo
             DoctorRepo["«component»<br/><b>DoctorRepository</b><br/>DOCTOR<br/>provided: IDoctorRepository<br/>required: SQL"]:::repo
@@ -56,9 +55,8 @@ flowchart TB
     %% ===== Booking Service -> Data Access =====
     Booking -.->|"IPatientRepository<br/>findPatientById"| PatientRepo
     Booking -.->|"IServiceRepository<br/>findServiceById, findServicesByIds"| ServiceRepo
-    Booking -.->|"IAppointmentRepository<br/>findAvailableSlots, findConflictingAppointments,<br/>saveAppointment, saveAppointmentServices"| AppRepo
+    Booking -.->|"IAppointmentRepository<br/>findAvailableSlots, findConflictingAppointments,<br/>saveAppointment, saveAppointmentServices<br/>(BEGIN, COMMIT, ROLLBACK)"| AppRepo
     Booking -.->|"IRoomRepository<br/>findAvailableRoom"| RoomRepo
-    Booking -.->|"ITransaction<br/>BEGIN, COMMIT, ROLLBACK"| TxManager
 
     %% ===== Catalog Service -> Data Access =====
     Catalog -.->|"IServiceRepository<br/>(UC12c)"| ServiceRepo
@@ -75,7 +73,6 @@ flowchart TB
     ServiceRepo -->|"SQL"| DB
     AppRepo -->|"SQL"| DB
     RoomRepo -->|"SQL"| DB
-    TxManager -->|"SQL"| DB
     InvoiceRepo -->|"SQL"| DB
     SpecialtyRepo -->|"SQL"| DB
     DoctorRepo -->|"SQL"| DB
