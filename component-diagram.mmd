@@ -15,11 +15,11 @@ flowchart TB
         end
 
         subgraph API["Рівень API"]
-            Controller["«component»<br/><b>REST API Controller</b><br/>JSON (NFR-09)<br/>validateJwt: 401 (NFR-05, NFR-06)<br/>rate limit 150 RPS: 429 (NFR-02, NFR-03)<br/>provided: IRestApi<br/>required: IBookingApi, ICatalogApi, IBillingApi"]:::comp
+            Controller["«component»<br/><b>REST API Controller</b><br/>JSON (NFR-09)<br/>rate limit 150 RPS: 429 (NFR-02, NFR-03)<br/>provided: IRestApi<br/>required: IBookingApi, ICatalogApi, IBillingApi"]:::comp
         end
 
         subgraph SVC["Рівень сервісів"]
-            Booking["«component»<br/><b>Booking Service</b><br/>UC1, UC3, UC4 (UC2, UC11)<br/>internal: calculateTotalDuration<br/>provided: IBookingApi<br/>required: IPatientRepository, IServiceRepository,<br/>IAppointmentRepository, IRoomRepository,<br/>ITransaction, ISmsGateway"]:::comp
+            Booking["«component»<br/><b>Booking Service</b><br/>UC0, UC1, UC2, UC3, UC4, UC11<br/>internal: validateJwt (401, REQ-20, NFR-05..07),<br/>calculateTotalDuration<br/>provided: IBookingApi<br/>required: IPatientRepository, IServiceRepository,<br/>IAppointmentRepository, IRoomRepository,<br/>ITransaction, ISmsGateway"]:::comp
             Catalog["«component»<br/><b>Catalog Service</b><br/>UC12 (specialties, rooms, services, doctors)<br/>provided: ICatalogApi<br/>required: IServiceRepository, IRoomRepository,<br/>ISpecialtyRepository, IDoctorRepository"]:::comp
             Billing["«component»<br/><b>Billing Service</b><br/>UC5, UC7, UC9<br/>provided: IBillingApi<br/>required: IInvoiceRepository, IAppointmentRepository"]:::comp
         end
@@ -46,10 +46,10 @@ flowchart TB
 
     %% ===== Користувачі і UI =====
     Users -->|"uses"| WebApp
-    WebApp -.->|"IRestApi<br/>JSON: createAppointment, getAvailableSlots, getService, ..."| Controller
+    WebApp -.->|"IRestApi<br/>JSON: signIn, createAppointment, getAvailableSlots, getService, ..."| Controller
 
     %% ===== API -> сервіси =====
-    Controller -.->|"IBookingApi<br/>createAppointment, getAvailableSlots, getService,<br/>getSchedule (UC4), cancelAppointment (UC3),<br/>getPatientAppointments (UC2, UC11)"| Booking
+    Controller -.->|"IBookingApi<br/>signIn (UC0), createAppointment (UC1), getAvailableSlots, getService,<br/>getSchedule (UC4), cancelAppointment (UC3),<br/>getPatientAppointments (UC2, UC11)"| Booking
     Controller -.->|"ICatalogApi<br/>manageSpecialties, manageRooms,<br/>manageServices (UC12)"| Catalog
     Controller -.->|"IBillingApi<br/>createInvoice (UC5), registerPayment (UC7),<br/>registerRefund (UC9)"| Billing
 
