@@ -20,7 +20,7 @@ flowchart TB
 
         subgraph SVC["Рівень сервісів"]
             Booking["«component»<br/><b>Booking Service</b><br/>UC0, UC1, UC2, UC3, UC4, UC11<br/>internal: validateJwt (401, REQ-20, NFR-05..07),<br/>calculateTotalDuration<br/>provided: IBookingApi<br/>required: IPatientRepository, IServiceRepository,<br/>IAppointmentRepository, IRoomRepository, ISmsGateway"]:::comp
-            Catalog["«component»<br/><b>Catalog Service</b><br/>UC12 (specialties, rooms, services, doctors)<br/>provided: ICatalogApi<br/>required: IServiceRepository, IRoomRepository,<br/>ISpecialtyRepository, IDoctorRepository"]:::comp
+            Catalog["«component»<br/><b>Catalog Service</b><br/>UC12, UC12a, UC12b, UC12c (REQ-11, REQ-12)<br/>provided: ICatalogApi<br/>required: IServiceRepository, IRoomRepository,<br/>ISpecialtyRepository, IDoctorRepository"]:::comp
             Billing["«component»<br/><b>Billing Service</b><br/>UC5, UC7, UC9<br/>provided: IBillingApi<br/>required: IInvoiceRepository, IAppointmentRepository"]:::comp
         end
 
@@ -31,7 +31,7 @@ flowchart TB
             RoomRepo["«component»<br/><b>RoomRepository</b><br/>ROOM<br/>provided: IRoomRepository<br/>required: SQL"]:::repo
             InvoiceRepo["«component»<br/><b>InvoiceRepository</b><br/>INVOICE<br/>provided: IInvoiceRepository<br/>required: SQL"]:::repo
             SpecialtyRepo["«component»<br/><b>SpecialtyRepository</b><br/>SPECIALTY<br/>provided: ISpecialtyRepository<br/>required: SQL"]:::repo
-            DoctorRepo["«component»<br/><b>DoctorRepository</b><br/>DOCTOR<br/>provided: IDoctorRepository<br/>required: SQL"]:::repo
+            DoctorRepo["«component»<br/><b>DoctorRepository</b><br/>DOCTOR, DOCTOR_SPECIALTY (M:M)<br/>provided: IDoctorRepository<br/>required: SQL"]:::repo
         end
 
         subgraph DBL["Рівень бази даних"]
@@ -49,7 +49,7 @@ flowchart TB
 
     %% ===== API -> сервіси =====
     Controller -.->|"IBookingApi<br/>signIn (UC0), createAppointment (UC1), getAvailableSlots, getService,<br/>getSchedule (UC4), cancelAppointment (UC3),<br/>getPatientAppointments (UC2, UC11)"| Booking
-    Controller -.->|"ICatalogApi<br/>manageSpecialties, manageRooms,<br/>manageServices (UC12)"| Catalog
+    Controller -.->|"ICatalogApi<br/>manageSpecialties (UC12a, REQ-11), manageRooms (UC12b),<br/>manageServices (UC12c) (UC12, REQ-12)"| Catalog
     Controller -.->|"IBillingApi<br/>createInvoice (UC5), registerPayment (UC7),<br/>registerRefund (UC9)"| Billing
 
     %% ===== Booking Service -> Data Access =====
@@ -59,10 +59,10 @@ flowchart TB
     Booking -.->|"IRoomRepository<br/>findAvailableRoom"| RoomRepo
 
     %% ===== Catalog Service -> Data Access =====
-    Catalog -.->|"IServiceRepository<br/>(UC12c)"| ServiceRepo
-    Catalog -.->|"IRoomRepository<br/>(UC12b)"| RoomRepo
-    Catalog -.->|"ISpecialtyRepository<br/>(UC12a)"| SpecialtyRepo
-    Catalog -.->|"IDoctorRepository<br/>(REQ-11, REQ-12)"| DoctorRepo
+    Catalog -.->|"IServiceRepository<br/>save/update SERVICE (UC12c)"| ServiceRepo
+    Catalog -.->|"IRoomRepository<br/>save/update ROOM (UC12b)"| RoomRepo
+    Catalog -.->|"ISpecialtyRepository<br/>save/update SPECIALTY (UC12a)"| SpecialtyRepo
+    Catalog -.->|"IDoctorRepository<br/>assignSpecialtyToDoctor (1..*, REQ-11, REQ-12)"| DoctorRepo
 
     %% ===== Billing Service -> Data Access =====
     Billing -.->|"IInvoiceRepository<br/>save and update INVOICE"| InvoiceRepo

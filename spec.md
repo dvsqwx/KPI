@@ -335,7 +335,7 @@
 - Рівень UI: клієнтський застосунок `Web App` для пацієнта, лікаря та адміністратора (`NFR-01`, `NFR-08`).
 - Рівень API: вхідний контролер `REST API Controller`, який приймає JSON-запити (`NFR-09`), обмежує навантаження до 150 RPS із кодом `429` (`NFR-02`, `NFR-03`) і передає виклики в сервіси.
 - Рівень сервісів: `Booking Service` (перевірка токена `validateJwt` і вхід `UC0`, запис на прийом `UC1`, перегляд і скасування `UC2`–`UC4`, історія лікування `UC11`), `Catalog Service` (довідники лікарів, спеціальностей, кабінетів і послуг `UC12`, `UC12a`–`UC12c`) та `Billing Service` (рахунки, контроль неоплачених прийомів і повернення коштів `UC5`, `UC7`, `UC9`, `REQ-04`–`REQ-07`, `REQ-10`, `REQ-14`).
-- Рівень доступу до даних (`Data Access`): репозиторії сутностей для виконання SQL-запитів і транзакцій `BEGIN`, `COMMIT`, `ROLLBACK` (`findAvailableSlots`, `findAvailableRoom`, `findConflictingAppointments`, `saveAppointment`, `saveAppointmentServices`) без окремого менеджера транзакцій.
+- Рівень доступу до даних (`Data Access`): репозиторії сутностей для виконання SQL-запитів і транзакцій `BEGIN`, `COMMIT`, `ROLLBACK` (`findAvailableSlots`, `findAvailableRoom`, `findConflictingAppointments`, `saveAppointment`, `saveAppointmentServices`), включно зі збереженням зв'язку `M:M` між `DOCTOR` і `SPECIALTY` (`REQ-11`, `UC12a`), без окремого менеджера транзакцій.
 - База даних: `PostgreSQL` (`NFR-09`), де зберігаються всі 8 сутностей моделі даних.
 - Зовнішні інтеграції: за межею системи знаходиться сервіс `SMS Gateway` для відправки SMS-підтверджень (`UC10`, `REQ-09`).
 
