@@ -21,7 +21,7 @@ flowchart TB
         subgraph SVC["Рівень сервісів"]
             Booking["«component»<br/><b>Booking Service</b><br/>UC0, UC1, UC2, UC3, UC4, UC11<br/>internal: validateJwt (401, REQ-20, NFR-05..07),<br/>calculateTotalDuration<br/>provided: IBookingApi<br/>required: IPatientRepository, IServiceRepository,<br/>IAppointmentRepository, IRoomRepository, ISmsGateway"]:::comp
             Catalog["«component»<br/><b>Catalog Service</b><br/>UC12, UC12a, UC12b, UC12c (REQ-11, REQ-12)<br/>provided: ICatalogApi<br/>required: IServiceRepository, IRoomRepository,<br/>ISpecialtyRepository, IDoctorRepository"]:::comp
-            Billing["«component»<br/><b>Billing Service</b><br/>UC5, UC7, UC9<br/>provided: IBillingApi<br/>required: IInvoiceRepository, IAppointmentRepository"]:::comp
+            Billing["«component»<br/><b>Billing Service</b><br/>UC5, UC7, UC9 (REQ-04..07, REQ-10, REQ-14)<br/>provided: IBillingApi<br/>required: IInvoiceRepository, IAppointmentRepository"]:::comp
         end
 
         subgraph DA["Рівень Data Access (репозиторії)"]
@@ -50,7 +50,7 @@ flowchart TB
     %% ===== API -> сервіси =====
     Controller -.->|"IBookingApi<br/>signIn (UC0), createAppointment (UC1), getAvailableSlots, getService,<br/>getSchedule (UC4), cancelAppointment (UC3),<br/>getPatientAppointments (UC2, UC11)"| Booking
     Controller -.->|"ICatalogApi<br/>manageSpecialties (UC12a, REQ-11), manageRooms (UC12b),<br/>manageServices (UC12c) (UC12, REQ-12)"| Catalog
-    Controller -.->|"IBillingApi<br/>createInvoice (UC5), registerPayment (UC7),<br/>registerRefund (UC9)"| Billing
+    Controller -.->|"IBillingApi<br/>createInvoice (UC5, REQ-04), registerPayment (UC7, REQ-05..07),<br/>registerRefund (UC9, REQ-10), flagUninvoicedAppointments (REQ-14)"| Billing
 
     %% ===== Booking Service -> Data Access =====
     Booking -.->|"IPatientRepository<br/>findPatientById"| PatientRepo
@@ -65,8 +65,8 @@ flowchart TB
     Catalog -.->|"IDoctorRepository<br/>assignSpecialtyToDoctor (1..*, REQ-11, REQ-12)"| DoctorRepo
 
     %% ===== Billing Service -> Data Access =====
-    Billing -.->|"IInvoiceRepository<br/>save and update INVOICE"| InvoiceRepo
-    Billing -.->|"IAppointmentRepository<br/>update status, read actual_price"| AppRepo
+    Billing -.->|"IInvoiceRepository<br/>save and update INVOICE (REQ-04..07, REQ-10)"| InvoiceRepo
+    Billing -.->|"IAppointmentRepository<br/>update status, read actual_price, findUninvoicedCompleted (REQ-14)"| AppRepo
 
     %% ===== Data Access -> PostgreSQL =====
     PatientRepo -->|"SQL"| DB
