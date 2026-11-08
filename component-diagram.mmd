@@ -15,11 +15,11 @@ flowchart TB
         end
 
         subgraph API["Рівень API"]
-            Controller["«component»<br/><b>REST API Controller</b><br/>JSON (NFR-09)<br/>rate limit 150 RPS: 429 (NFR-02, NFR-03)<br/>provided: IRestApi<br/>required: IBookingApi, ICatalogApi, IBillingApi"]:::comp
+            Controller["«component»<br/><b>REST API Controller</b><br/>JSON (NFR-04, NFR-09)<br/>rate limit 150 RPS: 429 (NFR-02, NFR-03)<br/>provided: IRestApi<br/>required: IBookingApi, ICatalogApi, IBillingApi"]:::comp
         end
 
         subgraph SVC["Рівень сервісів"]
-            Booking["«component»<br/><b>Booking Service</b><br/>UC0, UC1, UC2, UC3, UC4, UC11<br/>internal: validateJwt (401, REQ-20, NFR-05..07),<br/>calculateTotalDuration<br/>provided: IBookingApi<br/>required: IPatientRepository, IServiceRepository,<br/>IAppointmentRepository, IRoomRepository, ISmsGateway"]:::comp
+            Booking["«component»<br/><b>Booking Service</b><br/>UC0..UC4, UC10, UC11 (REQ-01..03, REQ-08, REQ-09, REQ-13, REQ-15..20)<br/>internal: validateJwt (401, REQ-20, NFR-05..07),<br/>calculateTotalDuration (REQ-18)<br/>provided: IBookingApi<br/>required: IPatientRepository, IServiceRepository,<br/>IAppointmentRepository, IRoomRepository, ISmsGateway"]:::comp
             Catalog["«component»<br/><b>Catalog Service</b><br/>UC12, UC12a, UC12b, UC12c (REQ-11, REQ-12)<br/>provided: ICatalogApi<br/>required: IServiceRepository, IRoomRepository,<br/>ISpecialtyRepository, IDoctorRepository"]:::comp
             Billing["«component»<br/><b>Billing Service</b><br/>UC5, UC7, UC9 (REQ-04..07, REQ-10, REQ-14)<br/>provided: IBillingApi<br/>required: IInvoiceRepository, IAppointmentRepository"]:::comp
         end
@@ -35,53 +35,8 @@ flowchart TB
         end
 
         subgraph DBL["Рівень бази даних"]
-            DB[("<b>PostgreSQL</b> (NFR-09)<br/>PATIENT, DOCTOR, SPECIALTY, ROOM, SERVICE,<br/>APPOINTMENT, APPOINTMENT_SERVICE, INVOICE<br/>provided: SQL")]:::db
+            DB[("<b>PostgreSQL</b> (NFR-04, NFR-09)<br/>PATIENT, DOCTOR, SPECIALTY, ROOM, SERVICE,<br/>APPOINTMENT, APPOINTMENT_SERVICE, INVOICE<br/>provided: SQL")]:::db
         end
     end
 
     subgraph EXT["Зовнішні сервіси (поза межею системи)"]
-        SMS[["<b>SMS Gateway</b><br/>provided: ISmsGateway"]]:::ext
-    end
-
-    %% ===== Користувачі і UI =====
-    Users -->|"uses"| WebApp
-    WebApp -.->|"IRestApi<br/>JSON: signIn, createAppointment, getAvailableSlots, getService, ..."| Controller
-
-    %% ===== API -> сервіси =====
-    Controller -.->|"IBookingApi<br/>signIn (UC0), createAppointment (UC1), getAvailableSlots, getService,<br/>getSchedule (UC4), cancelAppointment (UC3),<br/>getPatientAppointments (UC2, UC11)"| Booking
-    Controller -.->|"ICatalogApi<br/>manageSpecialties (UC12a, REQ-11), manageRooms (UC12b),<br/>manageServices (UC12c) (UC12, REQ-12)"| Catalog
-    Controller -.->|"IBillingApi<br/>createInvoice (UC5, REQ-04), registerPayment (UC7, REQ-05..07),<br/>registerRefund (UC9, REQ-10), flagUninvoicedAppointments (REQ-14)"| Billing
-
-    %% ===== Booking Service -> Data Access =====
-    Booking -.->|"IPatientRepository<br/>findPatientById"| PatientRepo
-    Booking -.->|"IServiceRepository<br/>findServiceById, findServicesByIds"| ServiceRepo
-    Booking -.->|"IAppointmentRepository<br/>findAvailableSlots, findConflictingAppointments,<br/>saveAppointment, saveAppointmentServices<br/>(BEGIN, COMMIT, ROLLBACK)"| AppRepo
-    Booking -.->|"IRoomRepository<br/>findAvailableRoom"| RoomRepo
-
-    %% ===== Catalog Service -> Data Access =====
-    Catalog -.->|"IServiceRepository<br/>save/update SERVICE (UC12c)"| ServiceRepo
-    Catalog -.->|"IRoomRepository<br/>save/update ROOM (UC12b)"| RoomRepo
-    Catalog -.->|"ISpecialtyRepository<br/>save/update SPECIALTY (UC12a)"| SpecialtyRepo
-    Catalog -.->|"IDoctorRepository<br/>assignSpecialtyToDoctor (1..*, REQ-11, REQ-12)"| DoctorRepo
-
-    %% ===== Billing Service -> Data Access =====
-    Billing -.->|"IInvoiceRepository<br/>save and update INVOICE (REQ-04..07, REQ-10)"| InvoiceRepo
-    Billing -.->|"IAppointmentRepository<br/>update status, read actual_price, findUninvoicedCompleted (REQ-14)"| AppRepo
-
-    %% ===== Data Access -> PostgreSQL =====
-    PatientRepo -->|"SQL"| DB
-    ServiceRepo -->|"SQL"| DB
-    AppRepo -->|"SQL"| DB
-    RoomRepo -->|"SQL"| DB
-    InvoiceRepo -->|"SQL"| DB
-    SpecialtyRepo -->|"SQL"| DB
-    DoctorRepo -->|"SQL"| DB
-
-    %% ===== Зовнішній сервіс =====
-    Booking -.->|"ISmsGateway (UC10)<br/>sendSms(phone, message_text) -> delivery status"| SMS
-
-    classDef comp fill:#e7f5ff,stroke:#1971c2,color:#1a1a1a;
-    classDef repo fill:#f3f0ff,stroke:#6741d9,color:#1a1a1a;
-    classDef db fill:#fff9db,stroke:#e67700,color:#1a1a1a;
-    classDef ext fill:#fff1f0,stroke:#9b2c2c,stroke-dasharray:4 2,color:#1a1a1a;
-    classDef actor fill:#eef2ff,stroke:#33415c,color:#1a1a1a;
