@@ -1,42 +1,69 @@
-%% Component diagram — архітектура системи «A-Dent», spec.md розділ 12.
-%% Нотація (Mermaid flowchart): прямокутник «component» — компонент; межа системи — зовнішній subgraph; рівні — вкладені subgraph.
-%% У кожному компоненті вказано provided (що він надає) і required (що йому потрібно) інтерфейси.
-%% Пунктирна стрілка — залежність від required-інтерфейсу: напрямок від споживача до постачальника, підпис — інтерфейс і виклики.
-%% Назви методів і сутностей збігаються з sequence-diagram.mmd, activity-diagram.mmd, use-case-diagram.mmd та er-diagram.mmd.
 flowchart TB
+    Users(["Patient, Doctor, Administrator"]):::actor
 
-    Users(["Patient, Doctor, Administrator<br/>(browser)"]):::actor
-
-    subgraph SYS["Інформаційна система клініки «A-Dent» (межа системи)"]
+    subgraph SYS["Система клініки A-Dent (межа системи)"]
         direction TB
-
         subgraph UI["Рівень UI"]
-            WebApp["«component»<br/><b>Web App</b><br/>uk-UA, 360-1920 px (NFR-01, NFR-08)<br/>required: IRestApi"]:::comp
+            WebApp["<b>Web App</b><br/>uk-UA, 360-1920 px (NFR-01, NFR-08)<br/>required: IRestApi"]:::comp
         end
-
         subgraph API["Рівень API"]
-            Controller["«component»<br/><b>REST API Controller</b><br/>JSON (NFR-04, NFR-09)<br/>rate limit 150 RPS: 429 (NFR-02, NFR-03)<br/>provided: IRestApi<br/>required: IBookingApi, ICatalogApi, IBillingApi"]:::comp
+            Controller["<b>REST API Controller</b><br/>JSON (NFR-04, NFR-09), limit 150 RPS: 429 (NFR-02, NFR-03)<br/>provided: IRestApi<br/>required: IBookingApi, ICatalogApi, IBillingApi"]:::comp
         end
-
         subgraph SVC["Рівень сервісів"]
-            Booking["«component»<br/><b>Booking Service</b><br/>UC0..UC4, UC10, UC11 (REQ-01..03, REQ-08, REQ-09, REQ-13, REQ-15..20)<br/>internal: validateJwt (401, REQ-20, NFR-05..07),<br/>calculateTotalDuration (REQ-18)<br/>provided: IBookingApi<br/>required: IPatientRepository, IServiceRepository,<br/>IAppointmentRepository, IRoomRepository, ISmsGateway"]:::comp
-            Catalog["«component»<br/><b>Catalog Service</b><br/>UC12, UC12a, UC12b, UC12c (REQ-11, REQ-12)<br/>provided: ICatalogApi<br/>required: IServiceRepository, IRoomRepository,<br/>ISpecialtyRepository, IDoctorRepository"]:::comp
-            Billing["«component»<br/><b>Billing Service</b><br/>UC5, UC7, UC9 (REQ-04..07, REQ-10, REQ-14)<br/>provided: IBillingApi<br/>required: IInvoiceRepository, IAppointmentRepository"]:::comp
+            Booking["<b>Booking Service</b><br/>UC0..UC4, UC6, UC10, UC11 (REQ-01..03, REQ-08, REQ-09, REQ-13, REQ-15..20)<br/>validateJwt (401, NFR-05..07), calculateTotalDuration<br/>provided: IBookingApi<br/>required: IPatientRepository, IServiceRepository, IAppointmentRepository, IRoomRepository, ISmsGateway"]:::comp
+            Catalog["<b>Catalog Service</b><br/>UC12, UC12a..c (REQ-11, REQ-12)<br/>provided: ICatalogApi<br/>required: IServiceRepository, IRoomRepository, ISpecialtyRepository, IDoctorRepository"]:::comp
+            Billing["<b>Billing Service</b><br/>UC5, UC7, UC8, UC9 (REQ-04..07, REQ-10, REQ-14)<br/>provided: IBillingApi<br/>required: IInvoiceRepository, IAppointmentRepository"]:::comp
         end
 
-        subgraph DA["Рівень Data Access (репозиторії)"]
-            PatientRepo["«component»<br/><b>PatientRepository</b><br/>PATIENT<br/>provided: IPatientRepository<br/>required: SQL"]:::repo
-            ServiceRepo["«component»<br/><b>ServiceRepository</b><br/>SERVICE<br/>provided: IServiceRepository<br/>required: SQL"]:::repo
-            AppRepo["«component»<br/><b>AppointmentRepository</b><br/>APPOINTMENT, APPOINTMENT_SERVICE<br/>provided: IAppointmentRepository<br/>required: SQL (BEGIN, COMMIT, ROLLBACK)"]:::repo
-            RoomRepo["«component»<br/><b>RoomRepository</b><br/>ROOM<br/>provided: IRoomRepository<br/>required: SQL"]:::repo
-            InvoiceRepo["«component»<br/><b>InvoiceRepository</b><br/>INVOICE<br/>provided: IInvoiceRepository<br/>required: SQL"]:::repo
-            SpecialtyRepo["«component»<br/><b>SpecialtyRepository</b><br/>SPECIALTY<br/>provided: ISpecialtyRepository<br/>required: SQL"]:::repo
-            DoctorRepo["«component»<br/><b>DoctorRepository</b><br/>DOCTOR, DOCTOR_SPECIALTY (M:M)<br/>provided: IDoctorRepository<br/>required: SQL"]:::repo
+        subgraph DA["Рівень Data Access"]
+            PatientRepo["<b>PatientRepository</b> (PATIENT)<br/>provided: IPatientRepository | required: SQL"]:::repo
+            ServiceRepo["<b>ServiceRepository</b> (SERVICE)<br/>provided: IServiceRepository | required: SQL"]:::repo
+            AppRepo["<b>AppointmentRepository</b> (APPOINTMENT, APPOINTMENT_SERVICE)<br/>provided: IAppointmentRepository | required: SQL (BEGIN, COMMIT, ROLLBACK)"]:::repo
+            RoomRepo["<b>RoomRepository</b> (ROOM)<br/>provided: IRoomRepository | required: SQL"]:::repo
+            InvoiceRepo["<b>InvoiceRepository</b> (INVOICE)<br/>provided: IInvoiceRepository | required: SQL"]:::repo
+            SpecialtyRepo["<b>SpecialtyRepository</b> (SPECIALTY)<br/>provided: ISpecialtyRepository | required: SQL"]:::repo
+            DoctorRepo["<b>DoctorRepository</b> (DOCTOR, SPECIALTY M:M)<br/>provided: IDoctorRepository | required: SQL"]:::repo
         end
-
         subgraph DBL["Рівень бази даних"]
             DB[("<b>PostgreSQL</b> (NFR-04, NFR-09)<br/>PATIENT, DOCTOR, SPECIALTY, ROOM, SERVICE,<br/>APPOINTMENT, APPOINTMENT_SERVICE, INVOICE<br/>provided: SQL")]:::db
         end
     end
+    subgraph EXT["Зовнішні сервіси"]
+        SMS[["<b>SMS Gateway</b><br/>provided: ISmsGateway"]]:::ext
+    end
 
-    subgraph EXT["Зовнішні сервіси (поза межею системи)"]
+    Users --> WebApp
+    WebApp -.->|"IRestApi (JSON)"| Controller
+
+    Controller -.->|"IBookingApi: signIn (UC0), createAppointment (UC1), getAvailableSlots,<br/>getService, getSchedule (UC4), completeAppointment (UC6),<br/>cancelAppointment (UC3), getPatientAppointments (UC2, UC11)"| Booking
+    Controller -.->|"ICatalogApi: manageSpecialties (UC12a), manageRooms (UC12b), manageServices (UC12c)"| Catalog
+    Controller -.->|"IBillingApi: createInvoice (UC5), registerPayment (UC7),<br/>viewInvoices (UC8), registerRefund (UC9), checkUninvoiced (REQ-14)"| Billing
+
+    Booking -.->|"IPatientRepository: findPatientById"| PatientRepo
+    Booking -.->|"IServiceRepository: findServiceById, findServicesByIds"| ServiceRepo
+    Booking -.->|"IAppointmentRepository: findAvailableSlots, findConflictingAppointments,<br/>saveAppointment, saveAppointmentServices (BEGIN, COMMIT, ROLLBACK)"| AppRepo
+    Booking -.->|"IRoomRepository: findAvailableRoom"| RoomRepo
+
+    Catalog -.->|"IServiceRepository"| ServiceRepo
+    Catalog -.->|"IRoomRepository"| RoomRepo
+    Catalog -.->|"ISpecialtyRepository"| SpecialtyRepo
+    Catalog -.->|"IDoctorRepository"| DoctorRepo
+
+    Billing -.->|"IInvoiceRepository: save/update INVOICE"| InvoiceRepo
+    Billing -.->|"IAppointmentRepository: read actual_price, update status"| AppRepo
+
+    PatientRepo -->|"SQL"| DB
+    ServiceRepo -->|"SQL"| DB
+    AppRepo -->|"SQL"| DB
+    RoomRepo -->|"SQL"| DB
+    InvoiceRepo -->|"SQL"| DB
+    SpecialtyRepo -->|"SQL"| DB
+    DoctorRepo -->|"SQL"| DB
+
+    Booking -.->|"ISmsGateway: sendSms (UC10, REQ-09)"| SMS
+
+    classDef comp fill:#e7f5ff,stroke:#1971c2,color:#1a1a1a;
+    classDef repo fill:#f3f0ff,stroke:#6741d9,color:#1a1a1a;
+    classDef db fill:#fff9db,stroke:#e67700,color:#1a1a1a;
+    classDef ext fill:#fff1f0,stroke:#9b2c2c,stroke-dasharray:4 2,color:#1a1a1a;
+    classDef actor fill:#eef2ff,stroke:#33415c,color:#1a1a1a;
