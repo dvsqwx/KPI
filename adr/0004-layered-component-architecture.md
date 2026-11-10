@@ -2,10 +2,10 @@
 
 - Status: прийнято
 - Date: 03.11.2026
-- Related: UC0, UC1, UC2, UC3, UC4, UC5, UC7, UC9, UC10, UC11, UC12, REQ-01, REQ-02, REQ-09, REQ-12, REQ-14, REQ-20, NFR-02, NFR-03, NFR-04, NFR-05, NFR-06, NFR-07, NFR-09, spec.md (розділ 12), component-diagram.mmd, er-diagram.mmd, sequence-diagram.mmd, activity-diagram.mmd
+- Related: UC0, UC1, UC2, UC3, UC4, UC5, UC6, UC7, UC8, UC9, UC10, UC11, UC12, REQ-01, REQ-02, REQ-09, REQ-12, REQ-14, REQ-20, NFR-02, NFR-03, NFR-04, NFR-05, NFR-06, NFR-07, NFR-09, spec.md (розділ 12), component-diagram.mmd, er-diagram.mmd, sequence-diagram.mmd, activity-diagram.mmd
 
 ## Context (Контекст)
-Система «A-Dent» охоплює три групи use cases: вхід, запис, розклад та історію прийомів (UC0, UC1, UC2, UC3, UC4, UC11), довідники (UC12, UC12a–UC12c) та рахунки й оплати (UC5, UC7, UC9). Усі вони працюють із вісьмома сутностями моделі даних у PostgreSQL. Запис на прийом є найскладнішою операцією: перевірка токена validateJwt (REQ-20, NFR-05, NFR-06), вичитка даних, а далі findAvailableRoom, findConflictingAppointments, saveAppointment і saveAppointmentServices виконуються в одній транзакції БД (BEGIN…COMMIT / ROLLBACK), після якої за потреби викликається зовнішній SMS Gateway (UC10). Стек зафіксовано в NFR-09: REST API з JSON і PostgreSQL, без воркерів і черг. Потрібно вирішити, як розділити бекенд на компоненти та чи звертатися до бази даних безпосередньо із сервісів, чи через окремий шар репозиторіїв.
+Система «A-Dent» охоплює три групи use cases: вхід, запис, розклад, проведення та історію прийомів (UC0..UC4, UC6, UC10, UC11), довідники (UC12, UC12a..c) та рахунки й оплати (UC5, UC7..UC9). Усі вони працюють із вісьмома сутностями моделі даних у PostgreSQL. Запис на прийом є найскладнішою операцією: перевірка токена validateJwt (REQ-20, NFR-05, NFR-06), вичитка даних, а далі findAvailableRoom, findConflictingAppointments, saveAppointment і saveAppointmentServices виконуються в одній транзакції БД (BEGIN…COMMIT / ROLLBACK), після якої за потреби викликається зовнішній SMS Gateway (UC10). Стек зафіксовано в NFR-09: REST API з JSON і PostgreSQL, без воркерів і черг. Потрібно вирішити, як розділити бекенд на компоненти та чи звертатися до бази даних безпосередньо із сервісів, чи через окремий шар репозиторіїв.
 
 ## Decision Drivers (Рушійні чинники)
 - D1. Відповідність доменам і use cases. Запис, довідники та рахунки мають різні сутності, правила й причини змін (REQ-01, REQ-02, REQ-12, REQ-04–REQ-07, REQ-14); зміна в одному домені не повинна зачіпати інші.
@@ -17,13 +17,13 @@
 
 ### Варіант 1. Три сервіси та шар Data Access (шарова архітектура)
 Рівні: Web App → REST API Controller → Booking Service, Catalog Service, Billing Service → Data Access (репозиторії сутностей) → PostgreSQL. SMS Gateway розташований поза межею системи й викликається лише з Booking Service. Сервіси не викликають один одного, а до бази звертаються тільки через інтерфейси репозиторіїв.
-- (+) D1: кожен сервіс відповідає за свою групу use cases: Booking (UC0, UC1–UC4, UC11), Catalog (UC12, UC12a–c), Billing (UC5, UC7, UC9); зміни правил оплати не зачіпають логіку запису.
+- (+) D1: кожен сервіс відповідає за свою групу use cases: Booking (UC0, UC1..UC4, UC6, UC10, UC11), Catalog (UC12, UC12a..c), Billing (UC5, UC7, UC8, UC9); зміни правил оплати не зачіпають логіку запису.
 - (+) D2: REST API Controller перевіряє ліміт запитів (150 RPS, код 429) на вході, а Booking Service виконує перевірку validateJwt (код 401) точно так само, як у sequence- та activity-діаграмах.
 - (+) D3: усі запити з sequence-діаграм (findAvailableSlots, findAvailableRoom, findConflictingAppointments, saveAppointment, saveAppointmentServices) і транзакція БД (BEGIN, COMMIT, ROLLBACK) зосереджені в репозиторіях без виділення зайвого компонента TransactionManager; ServiceRepository і RoomRepository спільні для Booking і Catalog, тому запити не дублюються.
 - (+) D4: усе це один backend-застосунок і одна база PostgreSQL без черг і воркерів; виклики між компонентами відбуваються через інтерфейси в межах процесу.
 - (−) Компонентів і інтерфейсів більше, ніж у простіших варіантах, і прості операції проходять кілька шарів (контролер, сервіс, репозиторій).
 - (−) D4: кожен додатковий шар додає час до відповіді, тому NFR-04 потрібно перевіряти вимірюванням на профілі навантаження.
-- (−) Спільні репозиторії зв'язують Booking і Catalog: зміна сигнатури IServiceRepository чи IRoomRepository зачіпає обидва сервіси.
+- (−) Спільні репозиторії зв'язують сервіси між собою: зміна сигнатури IServiceRepository, IRoomRepository або IAppointmentRepository зачіпає одразу два сервіси (Booking і Catalog або Booking і Billing).
 
 ### Варіант 2. Один монолітний сервіс із репозиторіями
 Єдиний Clinic Service реалізує всі use cases; шар репозиторіїв залишається.
@@ -42,7 +42,7 @@ Booking, Catalog і Billing самі формують SQL-запити та ке
 - (−) Бізнес-логіка жорстко прив'язана до PostgreSQL (NFR-09): сервіси важко тестувати без реальної бази, а зміна моделі (наприклад, додавання actual_price) зачіпає кілька сервісів.
 
 ## Decision (Рішення)
-Обрано Варіант 1. Бекенд розділено на три сервіси за доменами, бо запис, довідники та рахунки мають різні сутності й причини змін (D1): Booking Service працює з прийомами та входом користувача, Catalog Service — з довідниками, Billing Service — з рахунками й оплатами. Сервіси не викликають один одного й залежать лише від репозиторіїв. Перед PostgreSQL виділено шар Data Access, бо він збирає всі SQL-запити і команди транзакції (BEGIN, COMMIT, ROLLBACK) у репозиторіях та надає спільні IServiceRepository і IRoomRepository обом сервісам (D3). REST API Controller обмежує RPS на вході, а validateJwt виконується в сервісі відповідно до сценаріїв із попередніх робіт (D2). SMS Gateway лишається поза межею системи й викликається лише з Booking Service (UC10).
+Обрано Варіант 1. Бекенд розділено на три сервіси за доменами, бо запис, довідники та рахунки мають різні сутності й причини змін (D1): Booking Service працює з прийомами та входом користувача, Catalog Service — з довідниками, Billing Service — з рахунками й оплатами. Сервіси не викликають один одного й залежать лише від репозиторіїв. Перед PostgreSQL виділено шар Data Access, бо він збирає всі SQL-запити і команди транзакції (BEGIN, COMMIT, ROLLBACK) у репозиторіях та надає спільні репозиторії (IServiceRepository, IRoomRepository, IAppointmentRepository) сервісам (D3). REST API Controller обмежує RPS на вході, а validateJwt виконується в сервісі відповідно до сценаріїв із попередніх робіт (D2). SMS Gateway лишається поза межею системи й викликається лише з Booking Service (UC10).
 
 ## Consequences (Наслідки)
 - Залежності йдуть лише вниз: Web App → REST API Controller → сервіси → Data Access → PostgreSQL; між сервісами залежностей немає. Це показано в component-diagram.mmd з усіма п'ятьма рівнями та межею системи.
