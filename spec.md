@@ -327,20 +327,18 @@
 - Кроки відповідають прецедентам `UC0`, `UC1`, `UC10` із 2-ї лабораторної та сценаріям у `sequence-diagram.mmd` із 3-ї лабораторної.
 - Чіткий поділ ролей: доріжка `Database` виконує лише запити до таблиць і команди транзакції (`BEGIN`, `COMMIT`, `ROLLBACK`), а всі перевірки умов (ромби `if/else`) виконуються на доріжках `Booking Service`, `Web App` або `Patient`.
 
-## 12. Component diagram: архітектура та компоненти системи
+## 12. Архітектура компонентів (Component Diagram)
 
-Компонентна діаграма (`component-diagram.mmd`, `Mermaid flowchart`) показує внутрішні модулі системи «A-Dent», їхні інтерфейси (`provided` і `required`), зв'язки між ними та межу системи.
+Компонентна діаграма (component-diagram.mmd) описує будову системи «A-Dent» на 5 рівнях та її взаємодію із зовнішнім сервісом (обґрунтування наведено в adr/0004-layered-component-architecture.md):
 
-Основні модулі за рівнями:
-- Рівень UI: клієнтський застосунок `Web App` для пацієнта, лікаря та адміністратора (`NFR-01`, `NFR-08`).
-- Рівень API: вхідний контролер `REST API Controller`, який приймає JSON-запити (`NFR-09`), обмежує навантаження до 150 RPS із кодом `429` (`NFR-02`, `NFR-03`) і передає виклики в сервіси.
-- Рівень сервісів: `Booking Service` (перевірка токена `validateJwt` і вхід `UC0`, запис на прийом `UC1`, перегляд і скасування `UC2`–`UC4`, історія лікування `UC11`), `Catalog Service` (довідники лікарів, спеціальностей, кабінетів і послуг `UC12`, `UC12a`–`UC12c`) та `Billing Service` (рахунки, контроль неоплачених прийомів і повернення коштів `UC5`, `UC7`, `UC9`, `REQ-04`–`REQ-07`, `REQ-10`, `REQ-14`).
-- Рівень доступу до даних (`Data Access`): репозиторії сутностей для виконання SQL-запитів і транзакцій `BEGIN`, `COMMIT`, `ROLLBACK` (`findAvailableSlots`, `findAvailableRoom`, `findConflictingAppointments`, `saveAppointment`, `saveAppointmentServices`), включно зі збереженням зв'язку `M:M` між `DOCTOR` і `SPECIALTY` (`REQ-11`, `UC12a`), без окремого менеджера транзакцій.
-- База даних: `PostgreSQL` (`NFR-09`), де зберігаються всі 8 сутностей моделі даних.
-- Зовнішні інтеграції: за межею системи знаходиться сервіс `SMS Gateway` для відправки SMS-підтверджень (`UC10`, `REQ-09`).
+- Рівень UI (Web App) реалізує клієнтський інтерфейс пацієнта, лікаря та адміністратора (NFR-01, NFR-08) і звертається до бекенду через IRestApi.
+- Рівень API (REST API Controller) приймає JSON-запити (NFR-04, NFR-09), обмежує навантаження до 150 RPS із кодом 429 (NFR-02, NFR-03) і передає виклики сервісам через IBookingApi, ICatalogApi, IBillingApi.
+- Рівень сервісів поділений на три модулі: Booking Service (UC0–UC4, UC6, UC10, UC11, перевірка validateJwt з кодом 401 за REQ-20, NFR-05–NFR-07, розрахунок calculateTotalDuration за REQ-18), Catalog Service (UC12, UC12a–UC12c, REQ-11, REQ-12) та Billing Service (UC5, UC7–UC9, REQ-04–REQ-07, REQ-10, REQ-14).
+- Рівень доступу до даних (Data Access) містить 7 репозиторіїв (PatientRepository, ServiceRepository, AppointmentRepository, RoomRepository, InvoiceRepository, SpecialtyRepository, DoctorRepository) для виконання SQL-запитів, збереження зв'язку M:M між DOCTOR і SPECIALTY (REQ-11, UC12a) та керування транзакцією BEGIN, COMMIT, ROLLBACK в AppointmentRepository без окремого менеджера транзакцій.
+- Рівень бази даних (PostgreSQL, NFR-04, NFR-09) зберігає всі 8 сутностей моделі даних у 3NF (PATIENT, DOCTOR, SPECIALTY, ROOM, SERVICE, APPOINTMENT, APPOINTMENT_SERVICE, INVOICE). Зовнішній шлюз SMS Gateway (ISmsGateway, UC10, REQ-09) розташований поза межею системи.
 
 ### Критерії прийняття для Component-діаграми
-- У файлі `component-diagram.mmd` показано межу системи клініки і винесений за її межі `SMS Gateway`.
-- Присутні всі 5 рівнів: UI, API, сервіси, `Data Access` та база даних `PostgreSQL`.
-- Між компонентами підписано інтерфейси (`provided` і `required`) та напрямки викликів.
-- Назви компонентів і методів узгоджені з попередніми лабораторними роботами (`er-diagram.mmd`, `use-case-diagram.mmd`, `sequence-diagram.mmd`, `activity-diagram.mmd`).
+- У файлі component-diagram.mmd показано межу системи клініки і винесений за її межі SMS Gateway.
+- Присутні всі 5 рівнів: UI, API, сервіси, Data Access та база даних PostgreSQL.
+- Між компонентами підписано інтерфейси (provided і required) та напрямки викликів.
+- Назви компонентів і методів узгоджені з попередніми лабораторними роботами (er-diagram.mmd, use-case-diagram.mmd, sequence-diagram.mmd, activity-diagram.mmd).
